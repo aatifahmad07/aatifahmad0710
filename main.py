@@ -1,183 +1,209 @@
 import pygame
-import math
-import random
-
-
+import time
 from pygame import mixer
 
-'''Initialize pygame''' 
-pygame.init() #Always be there
+#Initialization
+pygame.init()
 
-'''Create a screen'''
-screen = pygame.display.set_mode((800,600))
+#Screen creation
+screen = pygame.display.set_mode((1000,700))
 
 '''Background sound'''
-mixer.music.load("background.mp3")
+mixer.music.load("fm-freemusic-give-me-a-smile.mp3")
 mixer.music.play(-1)
 
+#landing page image
+land_image = pygame.image.load("land_image.jpg")
 
-'''Title and Icon'''
-pygame.display.set_caption("Alien Attack Developed by Aatif Ahmad ")
-icon = pygame.image.load("spaceshuttle.png")
-pygame.display.set_icon(icon)
+#page_2
+char_s_image = pygame.image.load("Premium-Vector-Happy-cute-little-kid-study-alphabet-character.png")
+char_s_image_status = 0
 
-sad_face = pygame.image.load("sad.png")
- 
-'''Adding the player'''
-playerImg = pygame.image.load("spaceshuttle.png")
-playerX = 370
-playerY = 480
-playerX_change = 0
+#page_3
+char_s_scene = pygame.image.load("first_image.jpg")
+char_s_scene_status = 0
 
-'''Enemy'''
-enemyImg = []
-enemyX = []
-enemyY = []
-enemyX_change = []
-enemyY_change = []
+#page4
+char_a_image = pygame.image.load("char_a_image.png")
+char_a_image_status = 0
 
-num_of_enemies = 8
+#Setting the Title
+pygame.display.set_caption("Sakshar Game By Anushk Gupta and Aatif Ahmad")
+
+#Setting the icon
+icon_image = pygame.image.load("languages.png")
+pygame.display.set_icon(icon_image)
+
+#Sun Image Load
+sun_image = pygame.image.load("final_sun_image.png")
+
+#Snake Image Load
+snake_image = pygame.image.load("snake.png")
+
+#Swing Image Load
+swing_image = pygame.image.load("swing.png")
+
+#Stone Image Load
+stone_image = pygame.image.load("stone_image.png")
+
+#font for the text of the buttons
+font = pygame.font.Font("freesansbold.ttf",28)
+
+#winner image load
+winner_image = pygame.image.load("46141 (1).jpg")
+
+#sakshar image
+sakshar_image = pygame.image.load("SAKSHAR.jpg")
 
 
-for i in range(num_of_enemies):
-    enemyImg.append(pygame.image.load("ufo.png"))
-    enemyX.append(random.randint(0,740))
-    enemyY.append(random.randint(0,140))
-    enemyX_change.append(1.2)
-    enemyY_change.append(50)
+def music_play():
+    mixer.music.load("fm-freemusic-give-me-a-smile.mp3")
+    mixer.music.play(-1)
 
-'''ready - you can't see the bullet on screen.'''
-'''fire - the bullet is currently moving.'''
+def music_stop():
+    mixer.music.stop()
 
-bulletImg = pygame.image.load("bullet.png")
-bulletX = 0
-bulletY = 480
-bulletY_change = 5
-bullet_state = "ready"
+def sound_play():
+    level_complete_sound = mixer.Sound("success-1-6297.mp3")
+    level_complete_sound.play()
 
-'''Score'''
-score_value = 0
-font = pygame.font.Font("freesansbold.ttf",32)
 
-textX = 10
-textY = 10
 
-game_overX = 160
-game_overY = 200
+#the button class with init method having parameters as text, x-y coordinates, button enabling, height and width
+class Button:
+    def __init__(self,text,x_pos,y_pos,enabled,height,width):
+        self.text = text
+        self.x_pos = x_pos
+        self.y_pos = y_pos
+        self.enabled = enabled
+        self.height = height
+        self.width = width
+        # self.draw()
 
-'''Game Over Text'''
+    #function to draw the button
+    def draw(self):
+        button_text = font.render(self.text, True, "white")
+        button_rect = pygame.rect.Rect((self.x_pos,self.y_pos),(self.width,self.height))
+        pygame.draw.rect(screen,"#f07e0c",button_rect,0,5)
+        screen.blit(button_text,(self.x_pos + 5,self.y_pos + 10))
 
-game_over_font = pygame.font.Font("freesansbold.ttf",80)
+    #function to check the button click
+    def check_click(self):
+        mouse_pos = pygame.mouse.get_pos()
+        left_click = pygame.mouse.get_pressed()[0]
+        button_rect = pygame.rect.Rect((self.x_pos,self.y_pos),(self.width,self.height))
+        if left_click and button_rect.collidepoint(mouse_pos) and self.enabled:
+            return True
+        else:
+            return False
 
-def show_score(x,y):
-    score = font.render("Score : "+str(score_value),True,(0,0,0))
-    screen.blit(score,(x,y))
+#Beginning status of several elements which will be modified as per the transitions of the game
+input_1 = True
+input_2 = False
+char_s_scene_status = 0
+sun_image_status = 0
+snake_image_status = 0
+swing_image_status = 0
+stone_image_status = 0
+second_char_status = 0
+sound_play_status = 1
+music_play_status = 0
 
-def game_over_text(x,y):
-    over_text = game_over_font.render("GAME OVER",True,(255,0,0))
-    screen.blit(over_text,(x,y))
-    screen.blit(sad_face,(390,280))
 
-def player(x,y):
-    screen.blit(playerImg,(x,y))
 
-def enemy(x,y,i):
-    screen.blit(enemyImg[i],(x,y))
 
-def fire_bullet(x,y):
-    global bullet_state
-    bullet_state = "fire"
-    screen.blit(bulletImg,(x + 14,y + 10))
-
-def isCollision(enemyX,enemyY,bulletX,bulletY):
-    distance = math.sqrt(math.pow((enemyX - bulletX),2) + math.pow((enemyY - bulletY),2))
-    if distance < 27:
-        return True
-    else:
-        return False
-
-'''Game loop'''
-running = True
-while running:
-
-    screen.fill((175,175,175))
+control = True #status of the main while loop
+while control: #main running loop of the game screen
     
+    my_button_3 = Button("SUN",240,15,True,150,130)
+    my_button_3.draw()
+
+    my_button_4 = Button("SNAKE",800,550,True,200,150)
+    my_button_4.draw()
+
+    my_button_5 = Button("SWING",500,200,True,240,150)
+    my_button_5.draw()
+
+    my_button_6 = Button("STONE",50,500,True,150,150)
+    my_button_6.draw()
+
+    screen.blit(land_image,(0,0))
+    screen.blit(sakshar_image,(270,5))
+
+    my_button_1 = Button("LET US PLAY",430,590,True,50,190)
+    my_button_1.draw()
+    input_1 = my_button_1.check_click()
+    if input_1:
+        char_s_image_status = 1
+
+    my_button_2 = Button("NEXT",470,90,True,50,90)
+    
+    if char_s_image_status == 1:
+        screen.fill((255,255,255))
+        screen.blit(char_s_image,(180,170))
+        my_button_2.draw()
+        input_2 = my_button_2.check_click()
+        if input_2:
+            char_s_scene_status = 1
+    
+    if char_s_scene_status == 1:
+        screen.blit(char_s_scene,(0,0))
+        input_3 = my_button_3.check_click()
+        if input_3:
+            sun_image_status = 1
+        
+        input_4 = my_button_4.check_click()
+        if input_4:
+            snake_image_status = 1
+
+        input_5 = my_button_5.check_click()
+        if input_5:
+            swing_image_status = 1
+
+        input_6 = my_button_6.check_click()
+        if input_6:
+            stone_image_status = 1
+    
+    #blitting the images of elements on the screen after their positions are clicked
+    if sun_image_status == 1:
+        screen.blit(sun_image,(180,-6))
+        
+        
+    if snake_image_status == 1:
+        screen.blit(snake_image,(724,507))
+        
+
+    if swing_image_status == 1:
+        screen.blit(swing_image,(480,160))
+        
+
+    if stone_image_status == 1:
+        screen.blit(stone_image,(-10,480))
+
+    if sun_image_status == 1 and snake_image_status == 1 and swing_image_status == 1 and stone_image_status == 1:
+        
+        screen.fill((255,255,255))
+        screen.blit(winner_image,(120,70))
+        if sound_play_status == 1:
+            sound_play()
+            sound_play_status = 0
+        my_button_3 = Button("NEXT",475,590,True,50,90)
+        my_button_3.draw()
+        input_7 = my_button_3.check_click()
+        if input_7:
+            second_char_status = 1
+        
+    if second_char_status == 1:
+        
+        screen.fill((255,255,255))
+        screen.blit(char_a_image,(125,150))
+        my_button_4 = Button("NEXT",450,93,True,50,90)
+        my_button_4.draw()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            control = False #ensuring that the screen ends only when the quit event is pressed
 
-        '''If keystroke is pressed check whether its right or left'''
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                playerX_change = -1.2
-
-            if event.key == pygame.K_RIGHT:
-                playerX_change = 1.2
-
-            if event.key == pygame.K_SPACE:
-                bullet_sound = mixer.Sound("gun_shoot.mp3")
-                bullet_sound.play()
-                if bullet_state == "ready":
-                    bulletX = playerX
-                    fire_bullet(bulletX,bulletY)
-
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                playerX_change = 0
-
-    '''Checking the boundary of player'''
-
-    if (playerX + playerX_change) <=736 and (playerX + playerX_change) >=0:
-        playerX += playerX_change
-    else:
-        playerX += 0
-
-    for i in range(num_of_enemies):
-
-        '''Game Over'''
-        if enemyY[i] > 430:
-            for j in range(num_of_enemies):
-                enemyY[j] = 2000
-            game_over_text(game_overX,game_overY)
-            break
-
-        enemyX[i] += enemyX_change[i]
-        '''Checking the boundaries of enemy'''
-
-        if (enemyX[i] + enemyX_change[i]) >= 736:
-            enemyX_change[i] = -1.2
-            enemyY[i] += enemyY_change[i]
-
-        elif (enemyX[i] + enemyX_change[i]) <= 0:
-            enemyX_change[i] = 1.2
-            enemyY[i] += enemyY_change[i]
-
-        '''Check Collision'''
-        collision = isCollision(enemyX[i],enemyY[i],bulletX,bulletY)
-        if collision == True:
-            explosion_sound = mixer.Sound("bad-explosion-6855.mp3")
-            explosion_sound.play()
-            bulletY = 480
-            bullet_state = "ready"
-            score_value += 10
-            enemyX[i] = random.randint(0,740)
-            enemyY[i] = random.randint(0,140)
-
-        enemy(enemyX[i],enemyY[i],i)
-
-
-    '''Bullet Movement'''
-    if bulletY <= 0:
-        bulletY = 480
-        bullet_state = "ready"
-
-    if bullet_state == "fire":
-        fire_bullet(bulletX,bulletY)
-        bulletY -= bulletY_change
+    pygame.display.update()
 
     
-    player(playerX,playerY)
-    show_score(textX,textY)
-    pygame.display.update() #This is always there
